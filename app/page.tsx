@@ -15,6 +15,8 @@ import {Input} from "@/components/ui/input";
 import {Separator} from "@/components/ui/separator";
 import {Textarea} from "@/components/ui/textarea";
 import {ScrollArea} from "@/components/ui/scroll-area";
+import {RadioItem} from "@/components/radio/radio-item";
+import {RadioList} from "@/components/radio/radio-list";
 // import { WebviewWindow } from '@tauri-apps/api/window';
 
 export default function Home() {
@@ -31,6 +33,27 @@ export default function Home() {
         }
     }, []);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     return (
         <div className={"flex h-full w-full flex-col items-center"}>
             <Separator/>
@@ -40,8 +63,9 @@ export default function Home() {
                         KubeConfigs
                     </div>
                     <Separator/>
-                    <ScrollArea className={"h-full w-full rounded-md flex-1"}>
+                    <ScrollArea className={"h-[100px] w-full rounded-md flex-1"}>
                         <div className={"flex flex-col p-2"}>
+                            <RadioList/>
                         </div>
                     </ScrollArea>
                     <div className={"flex flex-row justify-between"}>

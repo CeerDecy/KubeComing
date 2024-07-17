@@ -55,11 +55,13 @@
     },
     "windows": [
       {
+        "decorations": true,
         "fullscreen": false,
         "height": 600,
         "resizable": true,
-        "title": "kube-coming",
-        "width": 800
+        "width": 800,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true
       }
     ]
   }

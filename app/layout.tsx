@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import "./styles.css"
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -16,7 +17,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body>
+      <div className={inter.className + " flex flex-col justify-between h-[100vh]"}>
+        <div data-tauri-drag-region className="titlebar"/>
+        {children}
+      </div>
+      </body>
     </html>
   );
 }

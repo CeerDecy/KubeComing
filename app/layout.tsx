@@ -2,6 +2,7 @@ import type {Metadata} from "next";
 import {Inter} from "next/font/google";
 import "./globals.css";
 import "./styles.css"
+import {ThemeProvider} from "@/components/theme/theme-provider";
 
 const inter = Inter({subsets: ["latin"]});
 
@@ -18,14 +19,20 @@ export default function RootLayout({
     return (
         <html lang="en">
         <body>
-        <div className={inter.className + " flex flex-col justify-between h-[100vh]"}>
-            <div data-tauri-drag-region className="titleBar flex flex-col justify-center items-center">
-                {/*<div>Kube Coming</div>*/}
+        <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange>
+            <div className={inter.className+" flex flex-col justify-between h-[100vh]"}>
+                <div data-tauri-drag-region className="titleBar flex flex-col justify-center items-center">
+                    {/*<div>Kube Coming</div>*/}
+                </div>
+                <div className={"flex-1"}>
+                    {children}
+                </div>
             </div>
-            <div className={"flex-1"}>
-                {children}
-            </div>
-        </div>
+        </ThemeProvider>
         </body>
         </html>
     );

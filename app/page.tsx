@@ -43,6 +43,7 @@ export default function Home() {
     const [configName, setConfigName] = useState("~/.kube/config")
     const [showProgress, setShowProgress] = useState<boolean>(false)
     const [progress, setProgress] = useState<number>(0)
+    const [configPath, setConfigPath] = useState("")
     const {setTheme} = useTheme()
     const themes = [
         {mode: "light", name: "Light"},
@@ -51,39 +52,42 @@ export default function Home() {
     ]
     const [currentTheme, setCurrentTheme] = useState<string>("System")
 
-    async function pause() {
-        await new Promise(resolve => setTimeout(resolve, 10)); // 100 毫秒 = 0.1 秒
-    }
-
     const apply = () => {
         setShowProgress(true);
         setProgress(0)
-        for (let i = 1; i <= 100; i++) {
+
+        setTimeout(() => {
+            setProgress(100)
             setTimeout(() => {
-                setProgress(i)
-                if (i === 100) {
-                    setTimeout(()=>{setShowProgress(false);},500)
-                }
-            }, 500)
-        }
+                setShowProgress(false)
+            }, 2000)
+        }, 0)
 
     }
 
     const initTheme = () => {
         let theme = localStorage.getItem("theme")
-        if (theme !== null && theme !== "") {
+        if (theme != null && theme !== "") {
             setCurrentTheme(theme)
             setTheme(theme)
         }
     }
 
+    async function selectFile() {
+
+    }
+
     useEffect(() => {
         if (!init.current) {
+            let homePath = ""
             init.current = true;
-            invoke("load_kube_config").then(val => {
-                // @ts-ignore
-                setContent(val.toString());
+            invoke<string>("get_home_path").then(res => {
+                homePath = res
+                invoke<string>("load_kube_config", {path: homePath + "/.kube/config"}).then(val => {
+                    setContent(val);
+                })
             })
+
             initTheme()
         }
     }, []);
@@ -165,7 +169,7 @@ export default function Home() {
 
     return (
         <div className={"flex h-full w-full flex-col items-center "}>
-            <Separator className={ (!showProgress ? "" : "hidden")}/>
+            <Separator className={(!showProgress ? "" : "hidden")}/>
             <Progress value={progress} className={"w-full h-[1px] bg-secondary " + (showProgress ? "" : "hidden")}/>
             <div className="flex h-full max-h-full w-full flex-row items-center">
                 <div className={" h-full w-[24vw] max-h-full flex flex-col"}>
@@ -183,7 +187,7 @@ export default function Home() {
                     <div className={"flex flex-row justify-between"}>
                         <div>
                             <Sheet>
-                                <SheetTrigger asChild><Button variant="ghost" onClick={()=>{
+                                <SheetTrigger asChild><Button variant="ghost" onClick={() => {
                                     console.log(currentTheme)
                                 }}><GearIcon/></Button></SheetTrigger>
                                 <SheetContent side={"left"}>
@@ -192,9 +196,9 @@ export default function Home() {
                                         <SheetDescription>
                                         </SheetDescription>
                                     </SheetHeader>
-                                    <div className="grid gap-4 py-4">
-                                        <div className="grid grid-cols-4 items-center gap-4">
-                                            <Label className="text-right">
+                                    <div className="flex flex-col">
+                                        <div className="flex  flex-row items-center mb-2">
+                                            <Label className="text-right w-[100px] mr-5">
                                                 Theme
                                             </Label>
                                             <Select defaultValue={currentTheme} onValueChange={(val) => {
@@ -215,12 +219,12 @@ export default function Home() {
                                                 </SelectContent>
                                             </Select>
                                         </div>
-                                        {/*<div className="grid grid-cols-4 items-center gap-4">*/}
-                                        {/*    <Label htmlFor="username" className="text-right">*/}
-                                        {/*        Username*/}
-                                        {/*    </Label>*/}
-                                        {/*    <Input id="username" value="@peduarte" className="col-span-3"/>*/}
-                                        {/*</div>*/}
+                                        <div className="flex  flex-row items-center">
+                                            <Label htmlFor="picture" className="text-right w-[100px] mr-5">
+                                                Kube Config
+                                            </Label>
+                                            <Button variant="link" onChange={selectFile}>@nextjs</Button>
+                                        </div>
                                     </div>
                                 </SheetContent>
                             </Sheet>

@@ -1,13 +1,13 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod file;
 
 use sea_orm::{Database, DbErr, DatabaseConnection};
 use futures::executor::block_on;
 use std::sync::Arc;
 use once_cell::sync::OnceCell;
-use std::env;
-use std::fs;
+use file::*;
 
 const DATABASE_URL: &str = "sqlite://db.sqlite?mode=rwc";
 
@@ -18,24 +18,6 @@ async fn connect() -> Result<Arc<DatabaseConnection>, DbErr> {
     Ok(Arc::new(db))
 }
 
-fn get_home_path() -> String {
-    if let Some(home_dir) = env::home_dir() {
-        return home_dir.to_string_lossy().into_owned();
-    }
-
-    String::new()
-}
-
-#[tauri::command]
-fn load_kube_config() -> String {
-    let kube_config_path = get_home_path() + "/.kube/config";
-
-    match fs::read_to_string(kube_config_path.clone()) {
-            Ok(content) => content,
-            Err(e) => format!("Error reading {} file: {}",kube_config_path, e),
-        }
-}
-
 fn main() {
     if let Err(err) = block_on(async {
         let db_conn = connect().await?;
@@ -44,7 +26,10 @@ fn main() {
         panic!("{}", err);
     }
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![load_kube_config])
+        .invoke_handler(tauri::generate_handler![
+            load_kube_config,
+            get_home_path
+            ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

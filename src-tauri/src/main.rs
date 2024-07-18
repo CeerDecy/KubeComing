@@ -30,9 +30,9 @@ fn get_home_path() -> String {
 fn load_kube_config() -> String {
     let kube_config_path = get_home_path() + "/.kube/config";
 
-    match fs::read_to_string(kube_config_path) {
+    match fs::read_to_string(kube_config_path.clone()) {
             Ok(content) => content,
-            Err(e) => panic!("Error reading ~/.kube/config file: {}", e),
+            Err(e) => format!("Error reading {} file: {}",kube_config_path, e),
         }
 }
 

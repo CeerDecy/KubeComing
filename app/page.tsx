@@ -35,18 +35,39 @@ import {
     SelectValue
 } from "@/components/ui/select";
 import {Item, RadioList} from "@/components/radio/radio-list";
+import {Progress} from "@/components/ui/progress";
 
 export default function Home() {
     const init = useRef(false);
     const [content, setContent] = useState("Default Content");
     const [configName, setConfigName] = useState("~/.kube/config")
+    const [showProgress, setShowProgress] = useState<boolean>(false)
+    const [progress, setProgress] = useState<number>(0)
     const {setTheme} = useTheme()
     const themes = [
-        {mode:"light",name:"Light"},
-        {mode:"dark",name:"Dark"},
-        {mode:"system",name:"System"}
+        {mode: "light", name: "Light"},
+        {mode: "dark", name: "Dark"},
+        {mode: "system", name: "System"}
     ]
     const [currentTheme, setCurrentTheme] = useState<string>("System")
+
+    async function pause() {
+        await new Promise(resolve => setTimeout(resolve, 10)); // 100 毫秒 = 0.1 秒
+    }
+
+    const apply = () => {
+        setShowProgress(true);
+        setProgress(0)
+        for (let i = 1; i <= 100; i++) {
+            setTimeout(() => {
+                setProgress(i)
+                if (i === 100) {
+                    setTimeout(()=>{setShowProgress(false);},500)
+                }
+            }, 500)
+        }
+
+    }
 
     const initTheme = () => {
         let theme = localStorage.getItem("theme")
@@ -80,7 +101,62 @@ export default function Home() {
             selected: false
         },
         {
-            id: 2,
+            id: 3,
+            name: "yhn-addon",
+            selected: false
+        },
+        {
+            id: 4,
+            name: "yhn-addon",
+            selected: false
+        },
+        {
+            id: 4,
+            name: "yhn-addon",
+            selected: false
+        },
+        {
+            id: 4,
+            name: "yhn-addon",
+            selected: false
+        },
+        {
+            id: 4,
+            name: "yhn-addon",
+            selected: false
+        },
+        {
+            id: 4,
+            name: "yhn-addon",
+            selected: false
+        },
+        {
+            id: 4,
+            name: "yhn-addon",
+            selected: false
+        },
+        {
+            id: 4,
+            name: "yhn-addon",
+            selected: false
+        },
+        {
+            id: 4,
+            name: "yhn-addon",
+            selected: false
+        },
+        {
+            id: 4,
+            name: "yhn-addon",
+            selected: false
+        },
+        {
+            id: 4,
+            name: "yhn-addon",
+            selected: false
+        },
+        {
+            id: 4,
             name: "yhn-addon",
             selected: false
         }
@@ -88,8 +164,9 @@ export default function Home() {
 
 
     return (
-        <div className={"flex h-full w-full flex-col items-center"}>
-            <Separator/>
+        <div className={"flex h-full w-full flex-col items-center "}>
+            <Separator className={ (!showProgress ? "" : "hidden")}/>
+            <Progress value={progress} className={"w-full h-[1px] bg-secondary " + (showProgress ? "" : "hidden")}/>
             <div className="flex h-full max-h-full w-full flex-row items-center">
                 <div className={" h-full w-[24vw] max-h-full flex flex-col"}>
                     <div className={"font-bold items-center flex flex-col mt-5 mb-5"}>
@@ -98,7 +175,7 @@ export default function Home() {
                     <Separator/>
                     <ScrollArea className={"h-[100px] w-full rounded-md flex-1"}>
                         <div className={"flex flex-col p-2"}>
-                            <RadioList data={data} onSelect={(index)=>{
+                            <RadioList data={data} onSelect={(index) => {
                                 // setContent(index+"")
                             }}/>
                         </div>
@@ -106,7 +183,9 @@ export default function Home() {
                     <div className={"flex flex-row justify-between"}>
                         <div>
                             <Sheet>
-                                <SheetTrigger asChild><Button variant="ghost"><GearIcon/></Button></SheetTrigger>
+                                <SheetTrigger asChild><Button variant="ghost" onClick={()=>{
+                                    console.log(currentTheme)
+                                }}><GearIcon/></Button></SheetTrigger>
                                 <SheetContent side={"left"}>
                                     <SheetHeader>
                                         <SheetTitle className={"mt-5"}>Setting</SheetTitle>
@@ -120,6 +199,7 @@ export default function Home() {
                                             </Label>
                                             <Select defaultValue={currentTheme} onValueChange={(val) => {
                                                 setTheme(val)
+                                                setCurrentTheme(val)
                                                 localStorage.setItem("theme", val)
                                             }}>
                                                 <SelectTrigger className="w-[180px]">
@@ -154,7 +234,7 @@ export default function Home() {
                 <div className={"h-full flex-1 p-2 flex flex-col"}>
                     <div className={"w-full flex justify-between"}>
                         <div className={"flex items-center"}>
-                            <Input value={configName} disabled onChange={(e)=>{
+                            <Input value={configName} disabled onChange={(e) => {
                                 setConfigName(e.target.value)
                             }}/>
                             {/*<div>~/.kube/config</div>*/}
@@ -162,7 +242,7 @@ export default function Home() {
                         <div>
                             <Button variant="outline" className={"mr-2"}><TrashIcon/></Button>
                             <Button variant="outline" className={"mr-2"}><StackIcon/></Button>
-                            <Button className={"mr-2"}><RocketIcon/></Button>
+                            <Button className={"mr-2"} onClick={apply}><RocketIcon/></Button>
                         </div>
                     </div>
                     <div className={"mt-2 flex-1"}>

@@ -34,7 +34,7 @@ import {
     SelectTrigger,
     SelectValue
 } from "@/components/ui/select";
-import {RadioList} from "@/components/radio/radio-list";
+import {Item, RadioList} from "@/components/radio/radio-list";
 
 export default function Home() {
     const init = useRef(false);
@@ -63,8 +63,29 @@ export default function Home() {
                 // @ts-ignore
                 setContent(val.toString());
             })
+            initTheme()
         }
     }, []);
+
+
+    const data: Item[] = [
+        {
+            id: 1,
+            name: "erda-jicheng",
+            selected: false
+        },
+        {
+            id: 2,
+            name: "yhn-kind",
+            selected: false
+        },
+        {
+            id: 2,
+            name: "yhn-addon",
+            selected: false
+        }
+    ]
+
 
     return (
         <div className={"flex h-full w-full flex-col items-center"}>
@@ -77,7 +98,9 @@ export default function Home() {
                     <Separator/>
                     <ScrollArea className={"h-[100px] w-full rounded-md flex-1"}>
                         <div className={"flex flex-col p-2"}>
-                            <RadioList/>
+                            <RadioList data={data} onSelect={(index)=>{
+                                // setContent(index+"")
+                            }}/>
                         </div>
                     </ScrollArea>
                     <div className={"flex flex-row justify-between"}>

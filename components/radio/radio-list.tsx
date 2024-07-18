@@ -20,7 +20,7 @@ export const RadioList: React.FC<RadioListProps> = ({onSelect,data}) => {
     const [selectedIndex, setSelectedIndex] = useState<number>(-1);
     return <div>
         {data.map((item, index) => {
-            return <RadioItem key={index} selected={index == selectedIndex} name={item.name} onClick={() => {
+            return <RadioItem key={index} selected={index == selectedIndex} name={item.name} index={index} onClick={() => {
                 setSelectedIndex(index)
                 if (onSelect) {
                     onSelect(index)

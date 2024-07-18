@@ -34,6 +34,7 @@ import {
     SelectTrigger,
     SelectValue
 } from "@/components/ui/select";
+import {Item, RadioList} from "@/components/radio/radio-list";
 
 export default function Home() {
     const init = useRef(false);
@@ -66,6 +67,26 @@ export default function Home() {
         }
     }, []);
 
+
+    const data: Item[] = [
+        {
+            id: 1,
+            name: "erda-jicheng",
+            selected: false
+        },
+        {
+            id: 2,
+            name: "yhn-kind",
+            selected: false
+        },
+        {
+            id: 2,
+            name: "yhn-addon",
+            selected: false
+        }
+    ]
+
+
     return (
         <div className={"flex h-full w-full flex-col items-center"}>
             <Separator/>
@@ -75,8 +96,11 @@ export default function Home() {
                         KubeConfigs
                     </div>
                     <Separator/>
-                    <ScrollArea className={"h-full w-full rounded-md flex-1"}>
+                    <ScrollArea className={"h-[100px] w-full rounded-md flex-1"}>
                         <div className={"flex flex-col p-2"}>
+                            <RadioList data={data} onSelect={(index)=>{
+                                // setContent(index+"")
+                            }}/>
                         </div>
                     </ScrollArea>
                     <div className={"flex flex-row justify-between"}>
@@ -130,9 +154,10 @@ export default function Home() {
                 <div className={"h-full flex-1 p-2 flex flex-col"}>
                     <div className={"w-full flex justify-between"}>
                         <div className={"flex items-center"}>
-                            <Input value={configName} disabled onChange={(e) => {
+                            <Input value={configName} disabled onChange={(e)=>{
                                 setConfigName(e.target.value)
                             }}/>
+                            {/*<div>~/.kube/config</div>*/}
                         </div>
                         <div>
                             <Button variant="outline" className={"mr-2"}><TrashIcon/></Button>

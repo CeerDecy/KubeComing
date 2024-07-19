@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/select";
 import {Item, RadioList} from "@/components/radio/radio-list";
 import {Progress} from "@/components/ui/progress";
+import {useToast} from "@/components/ui/use-toast";
 
 export default function Home() {
     const init = useRef(false);
@@ -51,6 +52,7 @@ export default function Home() {
         {mode: "system", name: "System"}
     ]
     const [currentTheme, setCurrentTheme] = useState<string>("System")
+    const {toast} = useToast()
 
     const apply = () => {
         setShowProgress(true);
@@ -60,9 +62,12 @@ export default function Home() {
             setProgress(100)
             setTimeout(() => {
                 setShowProgress(false)
+                toast({
+                    title: "Apply Kube Config",
+                    description: "["+configName + "] has been applied",
+                })
             }, 2000)
         }, 0)
-
     }
 
     const initTheme = () => {
@@ -73,17 +78,27 @@ export default function Home() {
         }
     }
 
-    async function selectFile() {
-
+    function selectFile() {
+        invoke<string>("pick_file").then(res => {
+            setConfigName(res)
+            setConfigPath(res)
+            localStorage.setItem("config_path",res)
+        })
     }
 
     useEffect(() => {
         if (!init.current) {
-            let homePath = ""
+            let configPath = ""
             init.current = true;
             invoke<string>("get_home_path").then(res => {
-                homePath = res
-                invoke<string>("load_kube_config", {path: homePath + "/.kube/config"}).then(val => {
+                configPath = res + "/.kube/config"
+                let path = localStorage.getItem("config_path");
+                if (path && path!==""){
+                    configPath = path
+                }
+                setConfigPath(configPath)
+                setConfigName(configPath)
+                invoke<string>("load_kube_config", {path: configPath}).then(val => {
                     setContent(val);
                 })
             })
@@ -220,10 +235,10 @@ export default function Home() {
                                             </Select>
                                         </div>
                                         <div className="flex  flex-row items-center">
-                                            <Label htmlFor="picture" className="text-right w-[100px] mr-5">
+                                            <Label htmlFor="picture" className="text-right w-[100px] mr-6">
                                                 Kube Config
                                             </Label>
-                                            <Button variant="link" onChange={selectFile}>@nextjs</Button>
+                                            <Button variant="link" className={"w-[180px]"}>{configPath}</Button>
                                         </div>
                                     </div>
                                 </SheetContent>

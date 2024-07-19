@@ -62,10 +62,19 @@ export default function Home() {
             setProgress(100)
             setTimeout(() => {
                 setShowProgress(false)
-                toast({
-                    title: "Apply Kube Config",
-                    description: "["+configName + "] has been applied",
+                console.log(configPath)
+                invoke<string>("write_to_file",{filePath:configPath,content:content}).then(res=>{
+                    toast({
+                        title: "Apply Kube Config",
+                        description: "["+configName + "] has been applied",
+                    })
+                }).catch((e)=>{
+                    toast({
+                        title: "Apply Kube Config",
+                        description: e.toString(),
+                    })
                 })
+
             }, 2000)
         }, 0)
     }

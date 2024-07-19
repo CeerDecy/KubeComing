@@ -12,6 +12,8 @@ yarn dev
 pnpm dev
 # or
 bun dev
+
+WEBKIT_DISABLE_COMPOSITING_MODE=1 AGENTS=1 yarn tauri dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.

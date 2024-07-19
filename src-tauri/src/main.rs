@@ -29,7 +29,8 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             load_kube_config,
             get_home_path,
-            pick_file
+            pick_file,
+            write_to_file
             ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

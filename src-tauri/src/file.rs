@@ -1,5 +1,7 @@
 use std::env;
 use std::fs;
+use std::fs::File;
+use std::io::Write;
 use tauri::api::dialog::FileDialogBuilder;
 // use tauri::api::dialog::blocking::FileDialogBuilder;
 
@@ -35,4 +37,20 @@ pub async fn pick_file() -> Option<String> {
             }
         });
     receiver.recv().unwrap()
+}
+
+#[tauri::command]
+pub fn write_to_file(file_path: String, content: String) -> Result<(), String> {
+    // 打开文件，如果文件不存在则创建它
+    let mut file = match File::create(&file_path) {
+        Ok(file) => file,
+        Err(err) => return Err(format!("Failed to create file: {}", err)),
+    };
+
+    // 将内容写入文件
+    if let Err(err) = file.write_all(content.as_bytes()) {
+        return Err(format!("Failed to write to file: {}", err));
+    }
+
+    Ok(())
 }

@@ -37,6 +37,8 @@ import {
 import {Item, RadioList} from "@/components/radio/radio-list";
 import {Progress} from "@/components/ui/progress";
 import {useToast} from "@/components/ui/use-toast";
+import {KubeConfig} from "@/lib/types"
+import * as yaml from 'js-yaml';
 
 export default function Home() {
     const init = useRef(false);
@@ -53,6 +55,7 @@ export default function Home() {
     ]
     const [currentTheme, setCurrentTheme] = useState<string>("System")
     const {toast} = useToast()
+    let kubeConfig: KubeConfig = {}
 
     const apply = () => {
         setShowProgress(true);
@@ -63,12 +66,12 @@ export default function Home() {
             setTimeout(() => {
                 setShowProgress(false)
                 console.log(configPath)
-                invoke<string>("write_to_file",{filePath:configPath,content:content}).then(res=>{
+                invoke<string>("write_to_file", {filePath: configPath, content: content}).then(res => {
                     toast({
                         title: "Apply Kube Config",
-                        description: "["+configName + "] has been applied",
+                        description: "[" + configName + "] has been applied",
                     })
-                }).catch((e)=>{
+                }).catch((e) => {
                     toast({
                         title: "Apply Kube Config",
                         description: e.toString(),
@@ -91,8 +94,19 @@ export default function Home() {
         invoke<string>("pick_file").then(res => {
             setConfigName(res)
             setConfigPath(res)
-            localStorage.setItem("config_path",res)
+            localStorage.setItem("config_path", res)
         })
+    }
+
+    function loadYaml(contents: string): KubeConfig  {
+        try {
+            const data = yaml.load(contents);
+            // 类型断言，确保 data 符合 Person 接口
+            return data as KubeConfig;
+        } catch (e) {
+            console.log(e);
+            return {} as KubeConfig;
+        }
     }
 
     useEffect(() => {
@@ -102,13 +116,15 @@ export default function Home() {
             invoke<string>("get_home_path").then(res => {
                 configPath = res + "/.kube/config"
                 let path = localStorage.getItem("config_path");
-                if (path && path!==""){
+                if (path && path !== "") {
                     configPath = path
                 }
                 setConfigPath(configPath)
                 setConfigName(configPath)
                 invoke<string>("load_kube_config", {path: configPath}).then(val => {
                     setContent(val);
+                    // eslint-disable-next-line react-hooks/exhaustive-deps
+                    kubeConfig = loadYaml(val)
                 })
             })
 

@@ -34,11 +34,12 @@ import {
     SelectTrigger,
     SelectValue
 } from "@/components/ui/select";
-import {Item, RadioList} from "@/components/radio/radio-list";
+import {RadioList} from "@/components/radio/radio-list";
 import {Progress} from "@/components/ui/progress";
 import {useToast} from "@/components/ui/use-toast";
-import {KubeConfig} from "@/lib/types"
+import {Context, KubeConfig} from "@/lib/types"
 import * as yaml from 'js-yaml';
+import {ConfigEditor} from "@/components/editor/editor";
 
 export default function Home() {
     const init = useRef(false);
@@ -55,7 +56,15 @@ export default function Home() {
     ]
     const [currentTheme, setCurrentTheme] = useState<string>("System")
     const {toast} = useToast()
-    let kubeConfig: KubeConfig = {}
+    const [kubeConfig, setKubeConfig] = useState<KubeConfig>({contexts: []})
+    const [currentCtxIndex, setCurrentCtxIndex] = useState<number>(-1);
+    const [selectCtxIndex, setSelectCtxIndex] = useState<number>(-1);
+
+
+    const onSelectCtx = (index:number) =>{
+        // setCurrentCtxIndex(index)
+        setSelectCtxIndex(index)
+    }
 
     const apply = () => {
         setShowProgress(true);
@@ -71,6 +80,8 @@ export default function Home() {
                         title: "Apply Kube Config",
                         description: "[" + configName + "] has been applied",
                     })
+                    initConfigYaml()
+
                 }).catch((e) => {
                     toast({
                         title: "Apply Kube Config",
@@ -98,9 +109,9 @@ export default function Home() {
         })
     }
 
-    function loadYaml(contents: string): KubeConfig  {
+    function loadYaml(contents: string): KubeConfig {
         try {
-            const data = yaml.load(contents);
+            const data = yaml.load(contents, null);
             // 类型断言，确保 data 符合 Person 接口
             return data as KubeConfig;
         } catch (e) {
@@ -109,102 +120,39 @@ export default function Home() {
         }
     }
 
+    const initConfigYaml = () => {
+        invoke<string>("get_home_path").then(res => {
+            let configPath = res + "/.kube/config"
+            let path = localStorage.getItem("config_path");
+            if (path && path !== "") {
+                configPath = path
+            }
+            setConfigPath(configPath)
+            setConfigName(configPath)
+            invoke<string>("load_kube_config", {path: configPath}).then(val => {
+                setContent(val);
+                // eslint-disable-next-line react-hooks/exhaustive-deps
+                let kc = loadYaml(val);
+                setKubeConfig(kc)
+
+                kc.contexts.forEach((item,index) =>{
+                    if (item.name === kc["current-context"]) {
+                        setCurrentCtxIndex(index)
+                    }
+                })
+
+            })
+        })
+    }
+
     useEffect(() => {
         if (!init.current) {
-            let configPath = ""
             init.current = true;
-            invoke<string>("get_home_path").then(res => {
-                configPath = res + "/.kube/config"
-                let path = localStorage.getItem("config_path");
-                if (path && path !== "") {
-                    configPath = path
-                }
-                setConfigPath(configPath)
-                setConfigName(configPath)
-                invoke<string>("load_kube_config", {path: configPath}).then(val => {
-                    setContent(val);
-                    // eslint-disable-next-line react-hooks/exhaustive-deps
-                    kubeConfig = loadYaml(val)
-                })
-            })
 
+            initConfigYaml()
             initTheme()
         }
     }, []);
-
-
-    const data: Item[] = [
-        {
-            id: 1,
-            name: "erda-jicheng",
-            selected: false
-        },
-        {
-            id: 2,
-            name: "yhn-kind",
-            selected: false
-        },
-        {
-            id: 3,
-            name: "yhn-addon",
-            selected: false
-        },
-        {
-            id: 4,
-            name: "yhn-addon",
-            selected: false
-        },
-        {
-            id: 4,
-            name: "yhn-addon",
-            selected: false
-        },
-        {
-            id: 4,
-            name: "yhn-addon",
-            selected: false
-        },
-        {
-            id: 4,
-            name: "yhn-addon",
-            selected: false
-        },
-        {
-            id: 4,
-            name: "yhn-addon",
-            selected: false
-        },
-        {
-            id: 4,
-            name: "yhn-addon",
-            selected: false
-        },
-        {
-            id: 4,
-            name: "yhn-addon",
-            selected: false
-        },
-        {
-            id: 4,
-            name: "yhn-addon",
-            selected: false
-        },
-        {
-            id: 4,
-            name: "yhn-addon",
-            selected: false
-        },
-        {
-            id: 4,
-            name: "yhn-addon",
-            selected: false
-        },
-        {
-            id: 4,
-            name: "yhn-addon",
-            selected: false
-        }
-    ]
 
 
     return (
@@ -213,15 +161,16 @@ export default function Home() {
             <Progress value={progress} className={"w-full h-[1px] bg-secondary " + (showProgress ? "" : "hidden")}/>
             <div className="flex h-full max-h-full w-full flex-row items-center">
                 <div className={" h-full w-[24vw] max-h-full flex flex-col"}>
-                    <div className={"font-bold items-center flex flex-col mt-5 mb-5"}>
+                    <div className={"font-bold items-center flex flex-col mt-5 mb-5 hover:cursor-pointer"} onClick={()=>{
+                        onSelectCtx(-1)
+                    }}>
                         KubeConfigs
                     </div>
                     <Separator/>
                     <ScrollArea className={"h-[100px] w-full rounded-md flex-1"}>
                         <div className={"flex flex-col p-2"}>
-                            <RadioList data={data} onSelect={(index) => {
-                                // setContent(index+"")
-                            }}/>
+                            <RadioList data={kubeConfig.contexts} currentIndex={currentCtxIndex} selectIndex={selectCtxIndex}
+                                       onSelect={onSelectCtx}/>
                         </div>
                     </ScrollArea>
                     <div className={"flex flex-row justify-between"}>
@@ -230,7 +179,7 @@ export default function Home() {
                                 <SheetTrigger asChild><Button variant="ghost" onClick={() => {
                                     console.log(currentTheme)
                                 }}><GearIcon/></Button></SheetTrigger>
-                                <SheetContent side={"left"}>
+                                <SheetContent side="left">
                                     <SheetHeader>
                                         <SheetTitle className={"mt-5"}>Setting</SheetTitle>
                                         <SheetDescription>
@@ -275,27 +224,15 @@ export default function Home() {
                 </div>
 
                 <Separator orientation="vertical" className={"h-full mr-1"}/>
-                <div className={"h-full flex-1 p-2 flex flex-col"}>
-                    <div className={"w-full flex justify-between"}>
-                        <div className={"flex items-center"}>
-                            <Input value={configName} disabled onChange={(e) => {
-                                setConfigName(e.target.value)
-                            }}/>
-                            {/*<div>~/.kube/config</div>*/}
-                        </div>
-                        <div>
-                            <Button variant="outline" className={"mr-2"}><TrashIcon/></Button>
-                            <Button variant="outline" className={"mr-2"}><StackIcon/></Button>
-                            <Button className={"mr-2"} onClick={apply}><RocketIcon/></Button>
-                        </div>
-                    </div>
-                    <div className={"mt-2 flex-1"}>
+                {
+                    selectCtxIndex === -1 && <ConfigEditor content={content} onApply={apply} onContentChange={(c) => {
+                        setContent(c)
+                    }}/>
+                }
+                {
+                    selectCtxIndex !== -1 && <div>1</div>
+                }
 
-                        <Textarea value={content} className={"h-full"} onChange={(e) => {
-                            setContent(e.target.value);
-                        }}/>
-                    </div>
-                </div>
             </div>
         </div>
     );

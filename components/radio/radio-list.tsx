@@ -2,30 +2,27 @@
 
 import * as React from "react"
 import {RadioItem} from "@/components/radio/radio-item";
-import {useState} from "react";
-
-export type Item = {
-    id: number;
-    name: string;
-    selected: boolean;
-}
+import {useEffect, useRef, useState} from "react";
+import {Context} from "@/lib/types";
 
 type RadioListProps = {
-    data: Item[]
+    data: Context[]
     onSelect?: (index: number) => void;
+    currentIndex : number;
+    selectIndex : number;
 }
 
 
-export const RadioList: React.FC<RadioListProps> = ({onSelect,data}) => {
-    const [selectedIndex, setSelectedIndex] = useState<number>(-1);
+export const RadioList: React.FC<RadioListProps> = ({onSelect,selectIndex, data, currentIndex}) => {
     return <div>
         {data.map((item, index) => {
-            return <RadioItem key={index} selected={index == selectedIndex} name={item.name} index={index} onClick={() => {
-                setSelectedIndex(index)
-                if (onSelect) {
-                    onSelect(index)
-                }
-            }}/>
+            return <RadioItem key={index} isCurrent={index == currentIndex} selected={index == selectIndex}
+                              name={item.name} index={index}
+                              onClick={() => {
+                                  if (onSelect) {
+                                      onSelect(index)
+                                  }
+                              }}/>
         })}
     </div>
 }

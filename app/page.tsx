@@ -52,9 +52,10 @@ import {
     DrawerTitle,
     DrawerTrigger,
 } from "@/components/ui/drawer"
+import {isRegistered, register} from '@tauri-apps/api/globalShortcut';
 
 
-export default function Home() {
+export default function Home(message?: any) {
     const init = useRef(false);
     const [content, setContent] = useState("Default Content");
     const [configName, setConfigName] = useState("~/.kube/config")
@@ -77,10 +78,16 @@ export default function Home() {
     const [contextClusterIndex, setContextClusterIndex] = useState(0)
     let searchCluster = ""
 
+    const registerShortcut = async () => {
+        await register('CommandOrControl+Shift+F1', (shortcut) => {
+
+        });
+    }
+
     const onSelectCtx = (index: number) => {
         // setCurrentCtxIndex(index)
         setSelectCtxIndex(index)
-        if (index>=0) {
+        if (index >= 0) {
             let cluster = kubeConfig.clusters.find((cluster) => {
                 return cluster.name === kubeConfig.contexts[index].context.cluster
             })
@@ -90,7 +97,7 @@ export default function Home() {
         }
     }
 
-    const apply = () => {
+    const saveContentConfig = () => {
         setShowProgress(true);
         setProgress(0)
 
@@ -175,6 +182,7 @@ export default function Home() {
 
             initConfigYaml()
             initTheme()
+            registerShortcut()
         }
     }, []);
 
@@ -251,7 +259,7 @@ export default function Home() {
 
                 <Separator orientation="vertical" className={"h-full mr-1"}/>
                 {
-                    selectCtxIndex === -1 && <ConfigEditor content={content} onApply={apply} onContentChange={(c) => {
+                    selectCtxIndex === -1 && <ConfigEditor content={content} onApply={saveContentConfig} onContentChange={(c) => {
                         setContent(c)
                     }}/>
                 }

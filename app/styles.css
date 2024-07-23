@@ -9,3 +9,8 @@
     /*left: 0;*/
     /*right: 0;*/
 }
+.single-line-ellipsis {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

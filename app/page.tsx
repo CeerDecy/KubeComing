@@ -38,8 +38,21 @@ import {RadioList} from "@/components/radio/radio-list";
 import {Progress} from "@/components/ui/progress";
 import {useToast} from "@/components/ui/use-toast";
 import {Context, KubeConfig} from "@/lib/types"
+// @ts-ignore
 import * as yaml from 'js-yaml';
 import {ConfigEditor} from "@/components/editor/editor";
+import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
+import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem} from "@/components/ui/command";
+import {Check, ChevronsUpDown} from "lucide-react"
+import {cn} from "@/lib/utils";
+import {
+    Drawer,
+    DrawerClose,
+    DrawerContent,
+    DrawerTitle,
+    DrawerTrigger,
+} from "@/components/ui/drawer"
+
 
 export default function Home() {
     const init = useRef(false);
@@ -56,14 +69,25 @@ export default function Home() {
     ]
     const [currentTheme, setCurrentTheme] = useState<string>("System")
     const {toast} = useToast()
-    const [kubeConfig, setKubeConfig] = useState<KubeConfig>({contexts: []})
+    const [kubeConfig, setKubeConfig] = useState<KubeConfig>({clusters: [], contexts: []})
     const [currentCtxIndex, setCurrentCtxIndex] = useState<number>(-1);
     const [selectCtxIndex, setSelectCtxIndex] = useState<number>(-1);
 
+    const [clusterOpen, setClusterOpen] = useState(false)
+    const [contextClusterIndex, setContextClusterIndex] = useState(0)
+    let searchCluster = ""
 
-    const onSelectCtx = (index:number) =>{
+    const onSelectCtx = (index: number) => {
         // setCurrentCtxIndex(index)
         setSelectCtxIndex(index)
+        if (index>=0) {
+            let cluster = kubeConfig.clusters.find((cluster) => {
+                return cluster.name === kubeConfig.contexts[index].context.cluster
+            })
+            if (cluster) {
+                setContextClusterIndex(kubeConfig.clusters.lastIndexOf(cluster))
+            }
+        }
     }
 
     const apply = () => {
@@ -135,7 +159,7 @@ export default function Home() {
                 let kc = loadYaml(val);
                 setKubeConfig(kc)
 
-                kc.contexts.forEach((item,index) =>{
+                kc.contexts.forEach((item, index) => {
                     if (item.name === kc["current-context"]) {
                         setCurrentCtxIndex(index)
                     }
@@ -161,15 +185,17 @@ export default function Home() {
             <Progress value={progress} className={"w-full h-[1px] bg-secondary " + (showProgress ? "" : "hidden")}/>
             <div className="flex h-full max-h-full w-full flex-row items-center">
                 <div className={" h-full w-[24vw] max-h-full flex flex-col"}>
-                    <div className={"font-bold items-center flex flex-col mt-5 mb-5 hover:cursor-pointer"} onClick={()=>{
-                        onSelectCtx(-1)
-                    }}>
+                    <div className={"font-bold items-center flex flex-col mt-5 mb-5 hover:cursor-pointer"}
+                         onClick={() => {
+                             onSelectCtx(-1)
+                         }}>
                         KubeConfigs
                     </div>
                     <Separator/>
                     <ScrollArea className={"h-[100px] w-full rounded-md flex-1"}>
                         <div className={"flex flex-col p-2"}>
-                            <RadioList data={kubeConfig.contexts} currentIndex={currentCtxIndex} selectIndex={selectCtxIndex}
+                            <RadioList data={kubeConfig.contexts} currentIndex={currentCtxIndex}
+                                       selectIndex={selectCtxIndex}
                                        onSelect={onSelectCtx}/>
                         </div>
                     </ScrollArea>
@@ -230,7 +256,118 @@ export default function Home() {
                     }}/>
                 }
                 {
-                    selectCtxIndex !== -1 && <div>1</div>
+                    selectCtxIndex !== -1 && <div className={"h-full flex-1 p-2 flex flex-col"}>
+                        <div className={"w-full flex justify-between"}>
+                            <div className={"flex items-center"}>
+                                <Input value={kubeConfig.contexts[selectCtxIndex].name} onChange={(e) => {
+                                    const val = e.target.value
+                                    const cfg = {...kubeConfig}
+                                    cfg.contexts[selectCtxIndex].name = val
+                                    setKubeConfig(cfg)
+                                }}/>
+                            </div>
+                            <div>
+                                <Button variant="outline" className={"mr-2"}><TrashIcon/></Button>
+                                <Button variant="outline" className={"mr-2"}><StackIcon/></Button>
+                                <Button className={"mr-2"}><RocketIcon/></Button>
+                            </div>
+                        </div>
+                        <div className={"mt-2 flex-1 flex flex-col p-2"}>
+                            <div>
+                                <Label className={"mr-4"}>cluster:</Label>
+                                <Popover open={clusterOpen} onOpenChange={setClusterOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            role="combobox"
+                                            aria-expanded={clusterOpen}
+                                            className="w-[200px] justify-between"
+                                        >
+                                            {contextClusterIndex >= 0
+                                                ? kubeConfig.clusters.find((cluster) => cluster.name === kubeConfig.clusters[contextClusterIndex].name)?.name
+                                                : "Select cluster..."}
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50"/>
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[200px] p-0">
+                                        <Command>
+                                            <CommandInput placeholder="Search cluster..." onChangeCapture={(e) => {
+                                                searchCluster = e.currentTarget.value
+                                            }}/>
+                                            <CommandEmpty><Button variant={"ghost"}
+                                                                  className={"w-full text-muted-foreground"}
+                                                                  onClick={() => {
+                                                                      let cluster = {
+                                                                          name: searchCluster,
+                                                                          cluster: {
+                                                                              server: "",
+                                                                              "certificate-authority-data": ""
+                                                                          }
+                                                                      }
+                                                                      kubeConfig.clusters.push(cluster)
+                                                                      setContextClusterIndex(kubeConfig.clusters.lastIndexOf(cluster))
+                                                                      setClusterOpen(false)
+                                                                  }}>add cluster</Button></CommandEmpty>
+                                            <CommandGroup>
+                                                {kubeConfig.clusters.map((cluster, index) => (
+                                                    <CommandItem key={index} value={cluster.name}
+                                                                 onSelect={(currentValue) => {
+                                                                     setContextClusterIndex(currentValue === kubeConfig.clusters[contextClusterIndex].name ? contextClusterIndex : index)
+                                                                     setClusterOpen(false)
+                                                                 }}
+                                                    >
+                                                        <Check
+                                                            className={cn(
+                                                                "mr-2 h-4 w-4",
+                                                                contextClusterIndex === index ? "opacity-100" : "opacity-0"
+                                                            )}
+                                                        />
+                                                        {cluster.name}
+                                                    </CommandItem>
+                                                ))}
+                                            </CommandGroup>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+                            <div className={"flex flex-row items-center mt-2"}>
+                                <Label className={"mr-4"}>Server:</Label>
+                                <Input value={kubeConfig.clusters[contextClusterIndex].cluster.server}/>
+                            </div>
+                            <div className={"flex flex-row items-center mt-2 w=full"}>
+                                <Label className={"mr-4"}>CA:</Label>
+                                <Drawer>
+                                    <DrawerTrigger asChild>
+                                        <Button variant="link">
+                                            <div
+                                                className={"single-line-ellipsis flex-1 max-w-[50vw] text-muted-foreground"}>
+                                                {
+                                                    kubeConfig.clusters[contextClusterIndex].cluster["certificate-authority-data"] ?
+                                                        kubeConfig.clusters[contextClusterIndex].cluster["certificate-authority-data"] : "Edit CA"
+                                                }
+                                            </div>
+                                        </Button>
+                                    </DrawerTrigger>
+                                    <DrawerContent className={"p-2"}>
+                                        <div className={"flex flex-row justify-between items-center"}>
+                                            <DrawerTitle className={"ml-2"}>Certificate Authority Data</DrawerTitle>
+                                            <DrawerClose asChild>
+                                                <Button className={"mr-2"}><StackIcon/></Button>
+                                            </DrawerClose>
+                                        </div>
+                                        <Textarea className={"mt-3 h-[40vh]"}
+                                                  value={kubeConfig.clusters[contextClusterIndex].cluster["certificate-authority-data"]}
+                                                  onChange={(e) => {
+                                                      const config = {...kubeConfig}
+                                                      config.clusters[contextClusterIndex].cluster["certificate-authority-data"] = e.target.value;
+                                                      setKubeConfig(config)
+                                                  }}/>
+                                    </DrawerContent>
+                                </Drawer>
+                            </div>
+                            <Separator className={"mt-5 mb-5"}/>
+                        </div>
+                    </div>
                 }
 
             </div>

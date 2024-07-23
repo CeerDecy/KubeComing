@@ -31,7 +31,7 @@ export interface User {
 
 export interface KubeConfig {
     "apiVersion"?: string;
-    "clusters"?: Cluster[];
+    "clusters": Cluster[];
     "contexts": Context[];
     "users"?: User[];
     "current-context"?: string

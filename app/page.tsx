@@ -30,7 +30,6 @@ import {
     SelectContent,
     SelectGroup,
     SelectItem,
-    SelectLabel,
     SelectTrigger,
     SelectValue
 } from "@/components/ui/select";
@@ -45,14 +44,18 @@ import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
 import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem} from "@/components/ui/command";
 import {Check, ChevronsUpDown} from "lucide-react"
 import {cn} from "@/lib/utils";
-import {
-    Drawer,
-    DrawerClose,
-    DrawerContent,
-    DrawerTitle,
-    DrawerTrigger,
-} from "@/components/ui/drawer"
 import {isRegistered, register} from '@tauri-apps/api/globalShortcut';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 
 export default function Home(message?: any) {
@@ -70,13 +73,19 @@ export default function Home(message?: any) {
     ]
     const [currentTheme, setCurrentTheme] = useState<string>("System")
     const {toast} = useToast()
-    const [kubeConfig, setKubeConfig] = useState<KubeConfig>({clusters: [], contexts: []})
+    const [kubeConfig, setKubeConfig] = useState<KubeConfig>({clusters: [], contexts: [], users: []})
     const [currentCtxIndex, setCurrentCtxIndex] = useState<number>(-1);
     const [selectCtxIndex, setSelectCtxIndex] = useState<number>(-1);
 
     const [clusterOpen, setClusterOpen] = useState(false)
     const [contextClusterIndex, setContextClusterIndex] = useState(0)
     let searchCluster = ""
+
+    const [userOpen, setUserOpen] = useState(false)
+    const [contextUserIndex, setContextUserIndex] = useState(0)
+    let searchUser = ""
+
+    let deleted = false
 
     const registerShortcut = async () => {
         await register('CommandOrControl+Shift+F1', (shortcut) => {
@@ -93,6 +102,12 @@ export default function Home(message?: any) {
             })
             if (cluster) {
                 setContextClusterIndex(kubeConfig.clusters.lastIndexOf(cluster))
+            }
+            let user = kubeConfig.users.find((user) => {
+                return user.name === kubeConfig.contexts[index].context.user
+            })
+            if (user) {
+                setContextUserIndex(kubeConfig.users.lastIndexOf(user))
             }
         }
     }
@@ -259,7 +274,8 @@ export default function Home(message?: any) {
 
                 <Separator orientation="vertical" className={"h-full mr-1"}/>
                 {
-                    selectCtxIndex === -1 && <ConfigEditor content={content} onApply={saveContentConfig} onContentChange={(c) => {
+                    selectCtxIndex === -1 &&
+                    <ConfigEditor content={content} onApply={saveContentConfig} onContentChange={(c) => {
                         setContent(c)
                     }}/>
                 }
@@ -280,104 +296,203 @@ export default function Home(message?: any) {
                                 <Button className={"mr-2"}><RocketIcon/></Button>
                             </div>
                         </div>
-                        <div className={"mt-2 flex-1 flex flex-col p-2"}>
-                            <div>
-                                <Label className={"mr-4"}>cluster:</Label>
-                                <Popover open={clusterOpen} onOpenChange={setClusterOpen}>
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            role="combobox"
-                                            aria-expanded={clusterOpen}
-                                            className="w-[200px] justify-between"
-                                        >
-                                            {contextClusterIndex >= 0
-                                                ? kubeConfig.clusters.find((cluster) => cluster.name === kubeConfig.clusters[contextClusterIndex].name)?.name
-                                                : "Select cluster..."}
-                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50"/>
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-[200px] p-0">
-                                        <Command>
-                                            <CommandInput placeholder="Search cluster..." onChangeCapture={(e) => {
-                                                searchCluster = e.currentTarget.value
-                                            }}/>
-                                            <CommandEmpty><Button variant={"ghost"}
-                                                                  className={"w-full text-muted-foreground"}
-                                                                  onClick={() => {
-                                                                      let cluster = {
-                                                                          name: searchCluster,
-                                                                          cluster: {
-                                                                              server: "",
-                                                                              "certificate-authority-data": ""
+                        {/*<Separator className={"mt-2"}/>*/}
+                        <ScrollArea className={"h-[100px] flex-1 pr-2"}>
+                            <div className={"mt-2 flex flex-col p-2"}>
+                                <div className={"flex flex-col"}>
+                                    <Label className={"mb-2"}>cluster:</Label>
+                                    <Popover open={clusterOpen} onOpenChange={setClusterOpen}>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                role="combobox"
+                                                aria-expanded={clusterOpen}
+                                                className="w-[200px] justify-between"
+                                            >
+                                                {contextClusterIndex >= 0
+                                                    ? kubeConfig.clusters.find((cluster) => cluster.name === kubeConfig.clusters[contextClusterIndex].name)?.name
+                                                    : "Select cluster..."}
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50"/>
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[200px] p-0">
+                                            <Command>
+                                                <CommandInput placeholder="Search cluster..." onChangeCapture={(e) => {
+                                                    searchCluster = e.currentTarget.value
+                                                }}/>
+                                                <CommandEmpty><Button variant={"ghost"}
+                                                                      className={"w-full text-muted-foreground"}
+                                                                      onClick={() => {
+                                                                          let cluster = {
+                                                                              name: searchCluster,
+                                                                              cluster: {
+                                                                                  server: "",
+                                                                                  "certificate-authority-data": ""
+                                                                              }
                                                                           }
-                                                                      }
-                                                                      kubeConfig.clusters.push(cluster)
-                                                                      setContextClusterIndex(kubeConfig.clusters.lastIndexOf(cluster))
-                                                                      setClusterOpen(false)
-                                                                  }}>add cluster</Button></CommandEmpty>
-                                            <CommandGroup>
-                                                {kubeConfig.clusters.map((cluster, index) => (
-                                                    <CommandItem key={index} value={cluster.name}
-                                                                 onSelect={(currentValue) => {
-                                                                     setContextClusterIndex(currentValue === kubeConfig.clusters[contextClusterIndex].name ? contextClusterIndex : index)
-                                                                     setClusterOpen(false)
-                                                                 }}
-                                                    >
-                                                        <Check
-                                                            className={cn(
-                                                                "mr-2 h-4 w-4",
-                                                                contextClusterIndex === index ? "opacity-100" : "opacity-0"
-                                                            )}
-                                                        />
-                                                        {cluster.name}
-                                                    </CommandItem>
-                                                ))}
-                                            </CommandGroup>
-                                        </Command>
-                                    </PopoverContent>
-                                </Popover>
+                                                                          kubeConfig.clusters.push(cluster)
+                                                                          setContextClusterIndex(kubeConfig.clusters.lastIndexOf(cluster))
+                                                                          setClusterOpen(false)
+                                                                      }}>add cluster</Button></CommandEmpty>
+                                                <CommandGroup>
+                                                    {kubeConfig.clusters.map((cluster, index) => (
+                                                        <CommandItem key={index} value={cluster.name}
+                                                                     onSelect={(currentValue) => {
+                                                                         setContextClusterIndex(currentValue === kubeConfig.clusters[contextClusterIndex].name ? contextClusterIndex : index)
+                                                                         setClusterOpen(false)
+                                                                     }}
+                                                        >
+                                                            <Check
+                                                                className={cn(
+                                                                    "mr-2 h-4 w-4",
+                                                                    contextClusterIndex === index ? "opacity-100" : "opacity-0"
+                                                                )}
+                                                            />
+                                                            {cluster.name}
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
+                                <div className={"flex flex-col"}>
+                                    <Label className={"mt-4 mb-2"}>Server:</Label>
+                                    <Input value={kubeConfig.clusters[contextClusterIndex].cluster.server}/>
+                                </div>
+                                <div className={"flex flex-col"}>
+                                    <Label className={"mt-4 mb-2"}>Certificate Authority:</Label>
+                                    <Textarea className={"h-[20vh]"}
+                                              value={kubeConfig.clusters[contextClusterIndex].cluster["certificate-authority-data"]}
+                                              onChange={(e) => {
+                                                  const config = {...kubeConfig}
+                                                  config.clusters[contextClusterIndex].cluster["certificate-authority-data"] = e.target.value;
+                                                  setKubeConfig(config)
+                                              }}/>
+                                </div>
+
+
+                                <Separator className={"mt-5"}/>
+
+
+                                <div className={"flex flex-col"}>
+                                    <Label className={"mt-6 mb-2"}>User:</Label>
+                                    <Popover open={userOpen} onOpenChange={setUserOpen}>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                role="combobox"
+                                                aria-expanded={userOpen}
+                                                className="w-[200px] justify-between"
+                                            >
+                                                {contextUserIndex >= 0
+                                                    ? kubeConfig.users.find((user) => user.name === kubeConfig.users[contextUserIndex].name)?.name
+                                                    : "Select user..."}
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50"/>
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[200px] p-0">
+                                            <Command>
+                                                <CommandInput placeholder="Search cluster..." onChangeCapture={(e) => {
+                                                    searchUser = e.currentTarget.value
+                                                }}/>
+                                                <CommandEmpty>
+                                                    <Button variant={"ghost"}
+                                                            className={"w-full text-muted-foreground"}
+                                                            onClick={() => {
+                                                                let user = {
+                                                                    name: searchUser,
+                                                                    user: {
+                                                                        "client-certificate-data": "",
+                                                                        "client-key-data": ""
+                                                                    }
+                                                                }
+                                                                kubeConfig.users.push(user)
+                                                                setContextUserIndex(kubeConfig.users.lastIndexOf(user))
+                                                                setUserOpen(false)
+                                                            }}>add User</Button>
+                                                </CommandEmpty>
+                                                <CommandGroup>
+                                                    {kubeConfig.users.map((user, index) => (
+                                                        <CommandItem key={index} value={user.name}
+                                                                     onSelect={(currentValue) => {
+                                                                         if (deleted) {
+                                                                             setContextUserIndex(0)
+                                                                         }else {
+                                                                             setContextUserIndex(currentValue === kubeConfig.users[contextUserIndex].name ? contextUserIndex : index)
+                                                                         }
+                                                                         deleted = false
+                                                                     }}
+                                                                     className={"flex flex-row items-center justify-between"}
+                                                        >
+                                                            <div className={"flex flex-row items-center"}>
+                                                                <Check
+                                                                    className={cn(
+                                                                        "mr-2 h-4 w-4",
+                                                                        contextUserIndex === index ? "opacity-100" : "opacity-0"
+                                                                    )}
+                                                                />
+                                                                {user.name}
+                                                            </div>
+                                                            <AlertDialog>
+                                                                <AlertDialogTrigger>
+                                                                    <TrashIcon
+                                                                        className={"hover:cursor-pointer hover:text-red-500"}/>
+                                                                </AlertDialogTrigger>
+                                                                <AlertDialogContent>
+                                                                    <AlertDialogHeader>
+                                                                        <AlertDialogTitle>Delete this
+                                                                            user?</AlertDialogTitle>
+                                                                        <AlertDialogDescription>
+                                                                            This action cannot be undone. This will
+                                                                            permanently delete your account
+                                                                            and remove your data from our servers.
+                                                                        </AlertDialogDescription>
+                                                                    </AlertDialogHeader>
+                                                                    <AlertDialogFooter>
+                                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                        <AlertDialogAction onClick={() => {
+                                                                            if ((contextUserIndex < 0 || contextUserIndex >= kubeConfig.users.length) && kubeConfig.users.length > 0) return
+                                                                            let deleteIndex = contextUserIndex
+                                                                            deleted = true
+                                                                            kubeConfig.users.splice(deleteIndex, 1)
+                                                                        }}>Yes</AlertDialogAction>
+                                                                    </AlertDialogFooter>
+                                                                </AlertDialogContent>
+                                                            </AlertDialog>
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
+
+                                <div className={"flex flex-col"}>
+                                    <Label className={"mt-4 mb-2"}>Client Certificate:</Label>
+                                    <Textarea className={"h-[20vh]"}
+                                              value={kubeConfig.users[contextUserIndex].user["client-certificate-data"]}
+                                              onChange={(e) => {
+                                                  const config = {...kubeConfig}
+                                                  config.users[contextUserIndex].user["client-certificate-data"] = e.target.value;
+                                                  setKubeConfig(config)
+                                              }}/>
+                                </div>
+
+                                <div className={"flex flex-col"}>
+                                    <Label className={"mt-4 mb-2"}>Client Key:</Label>
+                                    <Textarea className={"h-[20vh]"}
+                                              value={kubeConfig.users[contextUserIndex].user["client-key-data"]}
+                                              onChange={(e) => {
+                                                  const config = {...kubeConfig}
+                                                  config.users[contextUserIndex].user["client-key-data"] = e.target.value;
+                                                  setKubeConfig(config)
+                                              }}/>
+                                </div>
                             </div>
-                            <div className={"flex flex-row items-center mt-2"}>
-                                <Label className={"mr-4"}>Server:</Label>
-                                <Input value={kubeConfig.clusters[contextClusterIndex].cluster.server}/>
-                            </div>
-                            <div className={"flex flex-row items-center mt-2 w=full"}>
-                                <Label className={"mr-4"}>CA:</Label>
-                                <Drawer>
-                                    <DrawerTrigger asChild>
-                                        <Button variant="link">
-                                            <div
-                                                className={"single-line-ellipsis flex-1 max-w-[50vw] text-muted-foreground"}>
-                                                {
-                                                    kubeConfig.clusters[contextClusterIndex].cluster["certificate-authority-data"] ?
-                                                        kubeConfig.clusters[contextClusterIndex].cluster["certificate-authority-data"] : "Edit CA"
-                                                }
-                                            </div>
-                                        </Button>
-                                    </DrawerTrigger>
-                                    <DrawerContent className={"p-2"}>
-                                        <div className={"flex flex-row justify-between items-center"}>
-                                            <DrawerTitle className={"ml-2"}>Certificate Authority Data</DrawerTitle>
-                                            <DrawerClose asChild>
-                                                <Button className={"mr-2"}><StackIcon/></Button>
-                                            </DrawerClose>
-                                        </div>
-                                        <Textarea className={"mt-3 h-[40vh]"}
-                                                  value={kubeConfig.clusters[contextClusterIndex].cluster["certificate-authority-data"]}
-                                                  onChange={(e) => {
-                                                      const config = {...kubeConfig}
-                                                      config.clusters[contextClusterIndex].cluster["certificate-authority-data"] = e.target.value;
-                                                      setKubeConfig(config)
-                                                  }}/>
-                                    </DrawerContent>
-                                </Drawer>
-                            </div>
-                            <Separator className={"mt-5 mb-5"}/>
-                        </div>
+                        </ScrollArea>
                     </div>
                 }
-
             </div>
         </div>
     );

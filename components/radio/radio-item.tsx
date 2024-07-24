@@ -19,7 +19,7 @@ export const RadioItem: React.FC<RadioItemProps> = ({isCurrent, name, selected, 
         className={"flex flex-row p-2 justify-between items-center hover:bg-secondary rounded-md cursor-pointer"}
         onClick={onClick}>
         <div className={"flex flex-row items-center"}>
-            <div className={"mr-2 h-[20px] w-[2px]" + (selected ? " bg-primary" : "")}></div>
+            <div className={"mr-2 h-[20px] w-[2px] rounded-md" + (selected ? " bg-primary" : "")}></div>
             <FileTextIcon className={"mr-2"}/>
             <div className={"single-line-ellipsis max-w-[120px]"}>{name}</div>
         </div>

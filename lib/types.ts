@@ -33,6 +33,6 @@ export interface KubeConfig {
     "apiVersion"?: string;
     "clusters": Cluster[];
     "contexts": Context[];
-    "users"?: User[];
+    "users": User[];
     "current-context"?: string
 }

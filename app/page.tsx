@@ -135,12 +135,12 @@ export default function Home(message?: any) {
         unregisterAll().then()
         register('CommandOrControl+Shift+F1', (shortcut) => {
             applyContext(0, kc, configPath)
-            sendNotification({title:"Switch Context",body:"["+kc.contexts[0].name+"] has been applied"})
+            sendNotification({title: "Switch Context", body: "[" + kc.contexts[0].name + "] has been applied"})
         }).then();
 
         register('CommandOrControl+Shift+F2', (shortcut) => {
             applyContext(1, kc, configPath)
-            sendNotification({title:"Switch Context",body:"["+kc.contexts[1].name+"] has been applied"})
+            sendNotification({title: "Switch Context", body: "[" + kc.contexts[1].name + "] has been applied"})
         }).then();
     }
 
@@ -397,27 +397,71 @@ export default function Home(message?: any) {
                                                                               }
                                                                           }
                                                                           kubeConfig.clusters.push(cluster)
-                                                                          setContextClusterIndex(kubeConfig.clusters.lastIndexOf(cluster))
+                                                                          let index = kubeConfig.clusters.lastIndexOf(cluster);
+                                                                          // TODO Wrapped into a function
+                                                                          setContextClusterIndex(index)
+                                                                          let config = {...kubeConfig}
+                                                                          config.contexts[selectCtxIndex].context.cluster = kubeConfig.clusters[index].name
+                                                                          setKubeConfig(config)
                                                                           setClusterOpen(false)
                                                                       }}>add cluster</Button></CommandEmpty>
                                                 <CommandGroup>
                                                     {kubeConfig.clusters.map((cluster, index) => (
                                                         <CommandItem key={index} value={cluster.name}
                                                                      onSelect={(currentValue) => {
-                                                                         setContextClusterIndex(currentValue === kubeConfig.clusters[contextClusterIndex].name ? contextClusterIndex : index)
-                                                                         let config = {...kubeConfig}
-                                                                         config.contexts[selectCtxIndex].context.cluster = cluster.name
-                                                                         setKubeConfig(config)
-                                                                         setClusterOpen(false)
+                                                                         // TODO Simplified code
+                                                                         if (deleted) {
+                                                                             setContextClusterIndex(0)
+                                                                             let config = {...kubeConfig}
+                                                                             config.contexts[selectCtxIndex].context.cluster = config.clusters[0].name
+                                                                             setKubeConfig(config)
+                                                                         } else {
+                                                                             setContextClusterIndex(currentValue === kubeConfig.clusters[contextClusterIndex].name ? contextClusterIndex : index)
+                                                                             let config = {...kubeConfig}
+                                                                             config.contexts[selectCtxIndex].context.cluster = cluster.name
+                                                                             setKubeConfig(config)
+                                                                         }
+                                                                         deleted = false
                                                                      }}
+                                                                     className={"flex flex-row items-center justify-between"}
                                                         >
-                                                            <Check
-                                                                className={cn(
-                                                                    "mr-2 h-4 w-4",
-                                                                    contextClusterIndex === index ? "opacity-100" : "opacity-0"
-                                                                )}
-                                                            />
-                                                            {cluster.name}
+                                                            <div className={"flex flex-row items-center"}>
+                                                                <Check
+                                                                    className={cn(
+                                                                        "mr-2 h-4 w-4",
+                                                                        contextClusterIndex === index ? "opacity-100" : "opacity-0"
+                                                                    )}
+                                                                />
+                                                                <div className={"single-line-ellipsis max-w-[120px]"}>
+                                                                    {cluster.name}
+                                                                </div>
+                                                            </div>
+                                                            <AlertDialog>
+                                                                <AlertDialogTrigger>
+                                                                    <TrashIcon
+                                                                        className={"hover:cursor-pointer hover:text-red-500"}/>
+                                                                </AlertDialogTrigger>
+                                                                <AlertDialogContent>
+                                                                    <AlertDialogHeader>
+                                                                        <AlertDialogTitle>Delete this
+                                                                            user?</AlertDialogTitle>
+                                                                        <AlertDialogDescription>
+                                                                            This action cannot be undone. This will
+                                                                            permanently delete your account
+                                                                            and remove your data from our servers.
+                                                                        </AlertDialogDescription>
+                                                                    </AlertDialogHeader>
+                                                                    <AlertDialogFooter>
+                                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                        <AlertDialogAction onClick={() => {
+                                                                            if ((contextClusterIndex < 0 || contextClusterIndex >= kubeConfig.clusters.length) && kubeConfig.clusters.length > 0) return
+                                                                            let deleteIndex = contextClusterIndex
+                                                                            deleted = true
+                                                                            kubeConfig.clusters.splice(deleteIndex, 1)
+                                                                        }}>Yes</AlertDialogAction>
+                                                                    </AlertDialogFooter>
+                                                                </AlertDialogContent>
+                                                            </AlertDialog>
                                                         </CommandItem>
                                                     ))}
                                                 </CommandGroup>
@@ -482,7 +526,11 @@ export default function Home(message?: any) {
                                                                     }
                                                                 }
                                                                 kubeConfig.users.push(user)
-                                                                setContextUserIndex(kubeConfig.users.lastIndexOf(user))
+                                                                let index = kubeConfig.users.lastIndexOf(user);
+                                                                setContextUserIndex(index)
+                                                                let config = {...kubeConfig}
+                                                                config.contexts[selectCtxIndex].context.user = kubeConfig.users[index].name
+                                                                setKubeConfig(config)
                                                                 setUserOpen(false)
                                                             }}>add User</Button>
                                                 </CommandEmpty>
@@ -512,7 +560,9 @@ export default function Home(message?: any) {
                                                                         contextUserIndex === index ? "opacity-100" : "opacity-0"
                                                                     )}
                                                                 />
-                                                                {user.name}
+                                                                <div className={"single-line-ellipsis max-w-[120px]"}>
+                                                                    {user.name}
+                                                                </div>
                                                             </div>
                                                             <AlertDialog>
                                                                 <AlertDialogTrigger>

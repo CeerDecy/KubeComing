@@ -44,7 +44,7 @@ import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
 import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem} from "@/components/ui/command";
 import {Check, ChevronsUpDown} from "lucide-react"
 import {cn} from "@/lib/utils";
-import {isRegistered, register} from '@tauri-apps/api/globalShortcut';
+import {isRegistered, register, unregisterAll} from '@tauri-apps/api/globalShortcut';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -56,6 +56,7 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import {isPermissionGranted, requestPermission, sendNotification} from '@tauri-apps/api/notification';
 
 
 export default function Home(message?: any) {
@@ -87,14 +88,65 @@ export default function Home(message?: any) {
 
     let deleted = false
 
-    const registerShortcut = async () => {
-        await register('CommandOrControl+Shift+F1', (shortcut) => {
+    const applyContext = (index: number, kc: KubeConfig, configPath: string) => {
+        const config = {...kc}
+        if (config.contexts.length <= index) {
+            toast({
+                title: "Apply Kube Config",
+                description: "can't find such kube config " + config.contexts.length + " " + index,
+            })
+            return
+        }
+        config["current-context"] = kc.contexts[index].name
+        const content = yaml.dump(config);
+        invoke<string>("write_to_file", {filePath: configPath, content: content}).then(res => {
+            toast({
+                title: "Apply Kube Config",
+                description: "[" + config.contexts[index].name + "] has been applied",
+            })
+            initConfigYaml()
 
-        });
+        }).catch((e) => {
+            toast({
+                title: "Apply Kube Config",
+                description: e.toString(),
+            })
+        })
+    }
+
+    const saveContext = () => {
+        const config = yaml.dump(kubeConfig);
+        invoke<string>("write_to_file", {filePath: configPath, content: config}).then(res => {
+            toast({
+                title: "Save Kube Config",
+                description: "[" + kubeConfig.contexts[selectCtxIndex].name + "] has been saved",
+            })
+            initConfigYaml()
+
+        }).catch((e) => {
+            toast({
+                title: "Save Kube Config",
+                description: e.toString(),
+            })
+        })
+    }
+
+    const registerShortcut = (kc: KubeConfig, configPath: string) => {
+        unregisterAll().then()
+        register('CommandOrControl+Shift+F1', (shortcut) => {
+            applyContext(0, kc, configPath)
+            sendNotification({title:"Switch Context",body:"["+kc.contexts[0].name+"] has been applied"})
+        }).then();
+
+        register('CommandOrControl+Shift+F2', (shortcut) => {
+            applyContext(1, kc, configPath)
+            sendNotification({title:"Switch Context",body:"["+kc.contexts[1].name+"] has been applied"})
+        }).then();
     }
 
     const onSelectCtx = (index: number) => {
         // setCurrentCtxIndex(index)
+        initConfigYaml()
         setSelectCtxIndex(index)
         if (index >= 0) {
             let cluster = kubeConfig.clusters.find((cluster) => {
@@ -102,12 +154,16 @@ export default function Home(message?: any) {
             })
             if (cluster) {
                 setContextClusterIndex(kubeConfig.clusters.lastIndexOf(cluster))
+            } else {
+                setContextClusterIndex(0)
             }
             let user = kubeConfig.users.find((user) => {
                 return user.name === kubeConfig.contexts[index].context.user
             })
             if (user) {
                 setContextUserIndex(kubeConfig.users.lastIndexOf(user))
+            } else {
+                setContextUserIndex(0)
             }
         }
     }
@@ -186,9 +242,17 @@ export default function Home(message?: any) {
                         setCurrentCtxIndex(index)
                     }
                 })
-
+                registerShortcut(kc, configPath)
             })
         })
+    }
+
+    const initPermission = async () => {
+        let permissionGranted = await isPermissionGranted();
+        if (!permissionGranted) {
+            const permission = await requestPermission();
+            permissionGranted = permission === 'granted';
+        }
     }
 
     useEffect(() => {
@@ -197,7 +261,7 @@ export default function Home(message?: any) {
 
             initConfigYaml()
             initTheme()
-            registerShortcut()
+            initPermission().then()
         }
     }, []);
 
@@ -292,8 +356,10 @@ export default function Home(message?: any) {
                             </div>
                             <div>
                                 <Button variant="outline" className={"mr-2"}><TrashIcon/></Button>
-                                <Button variant="outline" className={"mr-2"}><StackIcon/></Button>
-                                <Button className={"mr-2"}><RocketIcon/></Button>
+                                <Button variant="outline" className={"mr-2"} onClick={saveContext}><StackIcon/></Button>
+                                <Button className={"mr-2"} onClick={() => {
+                                    applyContext(selectCtxIndex, kubeConfig, configPath)
+                                }}><RocketIcon/></Button>
                             </div>
                         </div>
                         {/*<Separator className={"mt-2"}/>*/}
@@ -339,6 +405,9 @@ export default function Home(message?: any) {
                                                         <CommandItem key={index} value={cluster.name}
                                                                      onSelect={(currentValue) => {
                                                                          setContextClusterIndex(currentValue === kubeConfig.clusters[contextClusterIndex].name ? contextClusterIndex : index)
+                                                                         let config = {...kubeConfig}
+                                                                         config.contexts[selectCtxIndex].context.cluster = cluster.name
+                                                                         setKubeConfig(config)
                                                                          setClusterOpen(false)
                                                                      }}
                                                         >
@@ -358,7 +427,12 @@ export default function Home(message?: any) {
                                 </div>
                                 <div className={"flex flex-col"}>
                                     <Label className={"mt-4 mb-2"}>Server:</Label>
-                                    <Input value={kubeConfig.clusters[contextClusterIndex].cluster.server}/>
+                                    <Input value={kubeConfig.clusters[contextClusterIndex].cluster.server}
+                                           onChange={(e) => {
+                                               const config = {...kubeConfig}
+                                               config.clusters[contextClusterIndex].cluster.server = e.target.value
+                                               setKubeConfig(config)
+                                           }}/>
                                 </div>
                                 <div className={"flex flex-col"}>
                                     <Label className={"mt-4 mb-2"}>Certificate Authority:</Label>
@@ -418,8 +492,14 @@ export default function Home(message?: any) {
                                                                      onSelect={(currentValue) => {
                                                                          if (deleted) {
                                                                              setContextUserIndex(0)
-                                                                         }else {
+                                                                             let config = {...kubeConfig}
+                                                                             config.contexts[selectCtxIndex].context.user = config.users[0].name
+                                                                             setKubeConfig(config)
+                                                                         } else {
                                                                              setContextUserIndex(currentValue === kubeConfig.users[contextUserIndex].name ? contextUserIndex : index)
+                                                                             let config = {...kubeConfig}
+                                                                             config.contexts[selectCtxIndex].context.user = user.name
+                                                                             setKubeConfig(config)
                                                                          }
                                                                          deleted = false
                                                                      }}

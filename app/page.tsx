@@ -57,6 +57,7 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import {isPermissionGranted, requestPermission, sendNotification} from '@tauri-apps/api/notification';
+import {Importer} from "@/components/importer/importer";
 
 
 export default function Home(message?: any) {
@@ -89,7 +90,7 @@ export default function Home(message?: any) {
     let deleted = false
 
     const applyContext = (index: number, kc: KubeConfig, configPath: string) => {
-        const config = {...kc}
+        const config:KubeConfig = {...kc}
         if (config.contexts.length <= index) {
             toast({
                 title: "Apply Kube Config",
@@ -332,7 +333,7 @@ export default function Home(message?: any) {
                             </Sheet>
                             <Button variant="ghost"><SymbolIcon/></Button>
                         </div>
-                        <Button variant="ghost"><PlusIcon/></Button>
+                        <Importer/>
                     </div>
                 </div>
 
@@ -386,7 +387,7 @@ export default function Home(message?: any) {
                                                 <CommandInput placeholder="Search cluster..." onChangeCapture={(e) => {
                                                     searchCluster = e.currentTarget.value
                                                 }}/>
-                                                <CommandEmpty><Button variant={"ghost"}
+                                                <CommandEmpty><Button variant="ghost"
                                                                       className={"w-full text-muted-foreground"}
                                                                       onClick={() => {
                                                                           let cluster = {
@@ -515,7 +516,7 @@ export default function Home(message?: any) {
                                                     searchUser = e.currentTarget.value
                                                 }}/>
                                                 <CommandEmpty>
-                                                    <Button variant={"ghost"}
+                                                    <Button variant="ghost"
                                                             className={"w-full text-muted-foreground"}
                                                             onClick={() => {
                                                                 let user = {

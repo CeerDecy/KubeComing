@@ -44,7 +44,7 @@ import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
 import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem} from "@/components/ui/command";
 import {Check, ChevronsUpDown} from "lucide-react"
 import {cn, generateRandomString} from "@/lib/utils";
-import {isRegistered, register, unregisterAll} from '@tauri-apps/api/globalShortcut';
+import {isRegistered, register, registerAll, unregisterAll} from '@tauri-apps/api/globalShortcut';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -134,15 +134,24 @@ export default function Home(message?: any) {
 
     const registerShortcut = (kc: KubeConfig, configPath: string) => {
         unregisterAll().then()
-        register('CommandOrControl+Shift+F1', (shortcut) => {
-            applyContext(0, kc, configPath)
-            sendNotification({title: "Switch Context", body: "[" + kc.contexts[0].name + "] has been applied"})
-        }).then();
 
-        register('CommandOrControl+Shift+F2', (shortcut) => {
-            applyContext(1, kc, configPath)
-            sendNotification({title: "Switch Context", body: "[" + kc.contexts[1].name + "] has been applied"})
-        }).then();
+        const keys = ['CommandOrControl+Shift+F1', 'CommandOrControl+Shift+F2', 'CommandOrControl+Shift+F3', 'CommandOrControl+Shift+F4', 'CommandOrControl+Shift+F5',
+            'CommandOrControl+Shift+F6', 'CommandOrControl+Shift+F7', 'CommandOrControl+Shift+F8', 'CommandOrControl+Shift+F9', 'CommandOrControl+Shift+F10',
+            'CommandOrControl+Shift+F11', 'CommandOrControl+Shift+F12']
+
+        registerAll(keys, (shortcut) => {
+            let index = -1
+            for (let i = 0; i < keys.length; i++) {
+                if (keys[i] === shortcut) {
+                    index = i
+                    break
+                }
+            }
+            if (index === -1 || kc.contexts.length <= index) return
+            applyContext(index, kc, configPath)
+            sendNotification({title: "Switch Context", body: "[" + kc.contexts[index].name + "] has been applied"})
+
+        }).then()
     }
 
     const onSelectCtx = (index: number) => {

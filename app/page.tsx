@@ -36,14 +36,14 @@ import {
 import {RadioList} from "@/components/radio/radio-list";
 import {Progress} from "@/components/ui/progress";
 import {useToast} from "@/components/ui/use-toast";
-import {Context, KubeConfig} from "@/lib/types"
+import {Cluster, Context, KubeConfig, User} from "@/lib/types"
 // @ts-ignore
 import * as yaml from 'js-yaml';
 import {ConfigEditor} from "@/components/editor/editor";
 import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
 import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem} from "@/components/ui/command";
 import {Check, ChevronsUpDown} from "lucide-react"
-import {cn} from "@/lib/utils";
+import {cn, generateRandomString} from "@/lib/utils";
 import {isRegistered, register, unregisterAll} from '@tauri-apps/api/globalShortcut';
 import {
     AlertDialog,
@@ -90,7 +90,7 @@ export default function Home(message?: any) {
     let deleted = false
 
     const applyContext = (index: number, kc: KubeConfig, configPath: string) => {
-        const config:KubeConfig = {...kc}
+        const config: KubeConfig = {...kc}
         if (config.contexts.length <= index) {
             toast({
                 title: "Apply Kube Config",
@@ -147,7 +147,7 @@ export default function Home(message?: any) {
 
     const onSelectCtx = (index: number) => {
         // setCurrentCtxIndex(index)
-        initConfigYaml()
+        if (index === -1) initConfigYaml()
         setSelectCtxIndex(index)
         if (index >= 0) {
             let cluster = kubeConfig.clusters.find((cluster) => {
@@ -248,6 +248,67 @@ export default function Home(message?: any) {
         })
     }
 
+    const reload = ()=>{
+        initConfigYaml()
+    }
+
+    const importFunc = (contexts: Context[], clusters: Cluster[], users: User[]) => {
+        kubeConfig.contexts.forEach((oldCtx) => {
+            contexts.forEach((newCtx) => {
+                if (oldCtx.name === newCtx.name) {
+                    newCtx.name = newCtx.name + "-" + generateRandomString(8)
+                }
+            })
+        })
+
+        kubeConfig.clusters.forEach((oldCluster) => {
+            clusters.forEach((newCluster) => {
+                if (oldCluster.name === newCluster.name) {
+                    let name = newCluster.name
+                    newCluster.name = newCluster.name + "-" + generateRandomString(8)
+                    // sync contexts
+                    contexts.forEach((ctx) => {
+                        if (ctx.context.cluster === name) {
+                            ctx.context.cluster = newCluster.name
+                        }
+                    })
+                }
+            })
+        })
+
+        kubeConfig.users.forEach((oldUser) => {
+            users.forEach((newUser) => {
+                if (oldUser.name === newUser.name) {
+                    let name = newUser.name
+                    newUser.name = newUser.name + "-" + generateRandomString(8)
+                    // sync context
+                    contexts.forEach((ctx) => {
+                        if (ctx.context.user === name) {
+                            ctx.context.user = newUser.name
+                        }
+                    })
+                }
+            })
+        })
+
+        let cfg = {...kubeConfig}
+        contexts.forEach((newCtx) => {
+            cfg.contexts.push(newCtx)
+        })
+
+        clusters.forEach((newCluster) => {
+            cfg.clusters.push(newCluster)
+        })
+
+        users.forEach((newUser) => {
+            cfg.users.push(newUser)
+        })
+
+        console.log(cfg)
+
+        setKubeConfig(cfg)
+    }
+
     const initPermission = async () => {
         let permissionGranted = await isPermissionGranted();
         if (!permissionGranted) {
@@ -331,9 +392,9 @@ export default function Home(message?: any) {
                                     </div>
                                 </SheetContent>
                             </Sheet>
-                            <Button variant="ghost"><SymbolIcon/></Button>
+                            <Button variant="ghost" onClick={reload}><SymbolIcon/></Button>
                         </div>
-                        <Importer/>
+                        <Importer importFunc={importFunc}/>
                     </div>
                 </div>
 

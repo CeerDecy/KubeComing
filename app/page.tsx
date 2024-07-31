@@ -426,6 +426,7 @@ export default function Home(message?: any) {
                                 }}/>
                             </div>
                             <div>
+                                {/* TODO Remove context*/}
                                 <Button variant="outline" className={"mr-2"}><TrashIcon/></Button>
                                 <Button variant="outline" className={"mr-2"} onClick={saveContext}><StackIcon/></Button>
                                 <Button className={"mr-2"} onClick={() => {

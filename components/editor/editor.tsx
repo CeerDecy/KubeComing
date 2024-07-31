@@ -31,9 +31,7 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = (props) => {
                 }}/>
             </div>
             <div>
-                <Button variant="outline" className={"mr-2"}><TrashIcon/></Button>
-                <Button variant="outline" className={"mr-2"}><StackIcon/></Button>
-                <Button className={"mr-2"} onClick={props.onApply}><RocketIcon/></Button>
+                <Button className={"mr-2"} onClick={props.onApply}><StackIcon/></Button>
             </div>
         </div>
         <div className={"mt-2 flex-1"}>

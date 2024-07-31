@@ -1,38 +1,55 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+<div align="center">
 
-## Getting Started
+<img src="src-tauri/icons/icon_512x512@2x.png" width="70" />
 
-First, run the development server:
+### KubeComing
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+![License](https://img.shields.io/badge/License--MIT-black?logo=DISCLAIMER)
+![Tauri](https://img.shields.io/badge/Tauri-black?logo=tauri&logoColor=white)
+![TypeScript](https://img.shields.io/badge/-TypeScript-black?logo=typescript&logoColor=white)
+![Rust](https://img.shields.io/badge/-Rust-black?logo=rust&logoColor=white)
+![MacOS](https://img.shields.io/badge/-macOS-black?&logo=apple&logoColor=white)
+![MacOS](https://img.shields.io/badge/-Kubernetes-black?&logo=kubernetes&logoColor=white)
 
-WEBKIT_DISABLE_COMPOSITING_MODE=1 AGENTS=1 yarn tauri dev
-```
+</div>
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Introduction
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+KubeComing is a tool designed to simplify the management of your Kubernetes configuration files (KubeConfig). With its
+user-friendly visual interface, you can easily manage multiple contexts and switch between them quickly using keyboard
+shortcuts.
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+![img.png](docs/image/KubeEditorPage.png)
 
-## Learn More
+![img.png](docs/image/ContextDetailsPage.png)
 
-To learn more about Next.js, take a look at the following resources:
+## Features
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Visual Interface**: Manage your KubeConfig files through an intuitive graphical user interface.
+- **Quick Context Switching**: Use keyboard shortcuts to switch between Kubernetes contexts quickly.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+## Installation
 
-## Deploy on Vercel
+please view github release page
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Shortcuts
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+Currently, the shortcuts only support F1 to F12, but this does not mean that the number of contexts is limited to 12. The shortcuts will be mapped according to the order of the contexts.
+
+| Shortcuts         | Context Index |
+|-------------------|---------------|
+| Command+Shift+F1  | 0             |
+| Command+Shift+F2  | 1             |
+| Command+Shift+F3  | 2             |
+| ...               | ...           |
+| Command+Shift+F12 | 11            |
+
+## Tips
+
+Enable notifications in the system notification settings to display notifications when switching contexts using shortcuts.
+
+![img.png](docs/image/OsSetting.png)
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more information.

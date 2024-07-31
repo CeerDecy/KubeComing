@@ -4,6 +4,8 @@
 
 ### KubeComing
 
+[简体中文](docs/README_CN.md)
+
 ![License](https://img.shields.io/badge/License--MIT-black?logo=DISCLAIMER)
 ![Tauri](https://img.shields.io/badge/Tauri-black?logo=tauri&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/-TypeScript-black?logo=typescript&logoColor=white)
@@ -12,6 +14,10 @@
 ![MacOS](https://img.shields.io/badge/-Kubernetes-black?&logo=kubernetes&logoColor=white)
 
 </div>
+
+## Installation
+
+You can download from [Github Release](https://github.com/CeerDecy/KubeComing/releases)
 
 ## Introduction
 
@@ -27,10 +33,6 @@ shortcuts.
 
 - **Visual Interface**: Manage your KubeConfig files through an intuitive graphical user interface.
 - **Quick Context Switching**: Use keyboard shortcuts to switch between Kubernetes contexts quickly.
-
-## Installation
-
-please view github release page
 
 ## Shortcuts
 

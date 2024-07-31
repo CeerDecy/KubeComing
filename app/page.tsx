@@ -6,7 +6,6 @@ import {
     GearIcon,
     SymbolIcon,
     TrashIcon,
-    PlusIcon,
     StackIcon,
     RocketIcon
 } from "@radix-ui/react-icons";
@@ -44,7 +43,7 @@ import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
 import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem} from "@/components/ui/command";
 import {Check, ChevronsUpDown} from "lucide-react"
 import {cn, generateRandomString} from "@/lib/utils";
-import {isRegistered, register, registerAll, unregisterAll} from '@tauri-apps/api/globalShortcut';
+import {registerAll, unregisterAll} from '@tauri-apps/api/globalShortcut';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -58,6 +57,15 @@ import {
 } from "@/components/ui/alert-dialog"
 import {isPermissionGranted, requestPermission, sendNotification} from '@tauri-apps/api/notification';
 import {Importer} from "@/components/importer/importer";
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger
+} from "@/components/ui/dialog";
 
 
 export default function Home(message?: any) {
@@ -89,6 +97,41 @@ export default function Home(message?: any) {
 
     let deleted = false
 
+    const deleteContext = () => {
+        let deleteIndex = selectCtxIndex
+        let name = kubeConfig.contexts[deleteIndex].name
+        let config = {...kubeConfig}
+        setSelectCtxIndex(-1)
+        config.contexts.splice(deleteIndex, 1)
+        setKubeConfig(config)
+        if (currentCtxIndex === deleteIndex) {
+            applyContext(-1, config, configPath)
+        } else {
+            applyContext(currentCtxIndex, config, configPath)
+        }
+        toast({
+            title: "Delete context",
+            description: "context [" + name + "] has been deleted"
+        })
+
+    }
+
+    const applyButton = (index: number, kc: KubeConfig, configPath: string) => {
+        setShowProgress(true);
+        setProgress(0)
+        setTimeout(() => {
+            setProgress(100)
+            setTimeout(() => {
+                setShowProgress(false)
+                applyContext(index, kc, configPath)
+                toast({
+                    title: "Apply Kube Config",
+                    description: "[" + kc.contexts[index].name + "] has been applied",
+                })
+            }, 2000)
+        }, 0)
+    }
+
     const applyContext = (index: number, kc: KubeConfig, configPath: string) => {
         const config: KubeConfig = {...kc}
         if (config.contexts.length <= index) {
@@ -98,15 +141,12 @@ export default function Home(message?: any) {
             })
             return
         }
-        config["current-context"] = kc.contexts[index].name
+        if (index > -1) {
+            config["current-context"] = kc.contexts[index].name
+        }
         const content = yaml.dump(config);
         invoke<string>("write_to_file", {filePath: configPath, content: content}).then(res => {
-            toast({
-                title: "Apply Kube Config",
-                description: "[" + config.contexts[index].name + "] has been applied",
-            })
             initConfigYaml()
-
         }).catch((e) => {
             toast({
                 title: "Apply Kube Config",
@@ -257,7 +297,7 @@ export default function Home(message?: any) {
         })
     }
 
-    const reload = ()=>{
+    const reload = () => {
         initConfigYaml()
     }
 
@@ -312,8 +352,6 @@ export default function Home(message?: any) {
         users.forEach((newUser) => {
             cfg.users.push(newUser)
         })
-
-        console.log(cfg)
 
         setKubeConfig(cfg)
     }
@@ -427,10 +465,29 @@ export default function Home(message?: any) {
                             </div>
                             <div>
                                 {/* TODO Remove context*/}
-                                <Button variant="outline" className={"mr-2"}><TrashIcon/></Button>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild><Button variant="outline"
+                                                                   className={"mr-2"}><TrashIcon/></Button></AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Delete context</AlertDialogTitle>
+                                        </AlertDialogHeader>
+                                        <AlertDialogDescription>
+                                            [{kubeConfig.contexts[selectCtxIndex].name}] will be deleted
+                                        </AlertDialogDescription>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel asChild>
+                                                <Button variant="outline" className={"mr-2"} size="sm">Cancel</Button>
+                                            </AlertDialogCancel>
+                                            <AlertDialogAction asChild>
+                                                <Button className={"mr-2"} size="sm" onClick={deleteContext}>Delete</Button>
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
                                 <Button variant="outline" className={"mr-2"} onClick={saveContext}><StackIcon/></Button>
                                 <Button className={"mr-2"} onClick={() => {
-                                    applyContext(selectCtxIndex, kubeConfig, configPath)
+                                    applyButton(selectCtxIndex, kubeConfig, configPath)
                                 }}><RocketIcon/></Button>
                             </div>
                         </div>
@@ -516,11 +573,10 @@ export default function Home(message?: any) {
                                                                 <AlertDialogContent>
                                                                     <AlertDialogHeader>
                                                                         <AlertDialogTitle>Delete this
-                                                                            user?</AlertDialogTitle>
+                                                                            cluster?</AlertDialogTitle>
                                                                         <AlertDialogDescription>
-                                                                            This action cannot be undone. This will
-                                                                            permanently delete your account
-                                                                            and remove your data from our servers.
+                                                                             This will delete cluster
+                                                                            and remove it from KubeConfig.
                                                                         </AlertDialogDescription>
                                                                     </AlertDialogHeader>
                                                                     <AlertDialogFooter>
@@ -646,9 +702,8 @@ export default function Home(message?: any) {
                                                                         <AlertDialogTitle>Delete this
                                                                             user?</AlertDialogTitle>
                                                                         <AlertDialogDescription>
-                                                                            This action cannot be undone. This will
-                                                                            permanently delete your account
-                                                                            and remove your data from our servers.
+                                                                            This will delete user
+                                                                            and remove it from KubeConfig.
                                                                         </AlertDialogDescription>
                                                                     </AlertDialogHeader>
                                                                     <AlertDialogFooter>

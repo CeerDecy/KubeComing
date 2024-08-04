@@ -81,7 +81,7 @@ export default function Home(message?: any) {
         {mode: "dark", name: "Dark"},
         {mode: "system", name: "System"}
     ]
-    const [currentTheme, setCurrentTheme] = useState<string>("System")
+    const [currentTheme, setCurrentTheme] = useState<string>("system")
     const {toast} = useToast()
     const [kubeConfig, setKubeConfig] = useState<KubeConfig>({clusters: [], contexts: [], users: []})
     const [currentCtxIndex, setCurrentCtxIndex] = useState<number>(-1);
